@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123b66">
+  <title>STC PWA Prototype v1</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <style>
+    :root {
+      --bg: #f3f6fa;
+      --card: #ffffff;
+      --ink: #12202f;
+      --muted: #5e6b78;
+      --line: #d8e0e8;
+      --accent: #123b66;
+      --accent-2: #1d5c99;
+      --ok: #1f7a35;
+      --warn: #c46a00;
+      --bad: #b42318;
+      --shadow: 0 6px 18px rgba(0,0,0,0.08);
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    .app {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 14px 14px 32px;
+    }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: linear-gradient(180deg, rgba(243,246,250,0.96), rgba(243,246,250,0.88));
+      backdrop-filter: blur(6px);
+      padding: 8px 0 12px;
+    }
+    .titlecard, .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .titlecard { padding: 14px 16px; }
+    h1 {
+      font-size: 1.15rem;
+      margin: 0 0 4px;
+      color: var(--accent);
+    }
+    .sub { color: var(--muted); font-size: 0.92rem; }
+    .card { padding: 14px; margin-top: 12px; }
+    .grid { display: grid; gap: 10px; }
+    label { font-size: 0.86rem; color: var(--muted); display: block; margin-bottom: 4px; }
+    input {
+      width: 100%;
+      border: 1px solid #bcc8d4;
+      border-radius: 12px;
+      padding: 12px 12px;
+      font-size: 1rem;
+      background: #fff;
+    }
+    input:focus { outline: 2px solid #9dc2eb; outline-offset: 1px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .pill {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #e9f0f7;
+      color: var(--accent);
+      font-size: 0.84rem;
+      font-weight: bold;
+    }
+    .btn {
+      width: 100%;
+      border: 0;
+      border-radius: 14px;
+      padding: 14px 14px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      background: var(--accent);
+      color: #fff;
+    }
+    .btn.secondary { background: #eef3f8; color: var(--accent); border: 1px solid #cdd8e3; }
+    .btn.warn { background: var(--warn); }
+    .btn.good { background: var(--ok); }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .help { color: var(--muted); font-size: 0.85rem; line-height: 1.4; }
+    .status { font-size: 0.9rem; font-weight: bold; }
+    .status.ok { color: var(--ok); }
+    .status.wait { color: var(--warn); }
+    .status.bad { color: var(--bad); }
+    .stc-row {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fbfdff;
+      margin-top: 10px;
+    }
+    .stc-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .stc-name { font-weight: bold; }
+    .timebox {
+      margin-top: 8px;
+      background: #f3f7fb;
+      border: 1px solid #d9e4ee;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-family: "Courier New", monospace;
+      font-size: 1.05rem;
+      font-weight: bold;
+      text-align: center;
+      letter-spacing: 0.04em;
+    }
+    .holdwrap {
+      position: relative;
+      height: 52px;
+      border-radius: 14px;
+      overflow: hidden;
+      background: #dfe9f3;
+      border: 1px solid #c8d5e2;
+      margin-top: 8px;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    .holdfill {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      transition: width 0.04s linear;
+    }
+    .holdlabel {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: var(--accent);
+      z-index: 2;
+    }
+    .holdwrap.active .holdlabel { color: #fff; }
+    .review-row {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #ecf1f5;
+    }
+    .review-row:first-child { border-top: 0; }
+    .footer-actions { display: grid; gap: 10px; margin-top: 14px; }
+    dialog {
+      width: min(92vw, 420px);
+      border: 0;
+      border-radius: 18px;
+      padding: 0;
+      box-shadow: 0 18px 40px rgba(0,0,0,0.22);
+    }
+    dialog::backdrop { background: rgba(0,0,0,0.35); }
+    .modal { padding: 16px; }
+    .modal h2 { margin: 0 0 8px; font-size: 1.1rem; color: var(--accent); }
+    .modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="titlecard">
+        <h1>STC Recorder Prototype</h1>
+        <div class="sub">Standalone mobile-first prototype. Local-only for now.</div>
+      </div>
+    </div>
+
+    <section class="card" id="setupCard">
+      <span class="pill">Setup</span>
+      <div class="grid" style="margin-top:10px;">
+        <div class="row2">
+          <div>
+            <label for="rallyNo">Rally Number</label>
+            <input id="rallyNo" inputmode="numeric" placeholder="e.g. 12">
+          </div>
+          <div>
+            <label for="surname">Surname</label>
+            <input id="surname" placeholder="e.g. Smith">
+          </div>
+        </div>
+        <div class="row2">
+          <div>
+            <label for="startTime">Start Time</label>
+            <input id="startTime" placeholder="HH:MM:SS" value="09:00:00">
+          </div>
+          <div>
+            <label for="stcCount">Number of STCs</label>
+            <input id="stcCount" inputmode="numeric" placeholder="e.g. 6" value="6">
+          </div>
+        </div>
+        <div class="help">All time values use <strong>HH:MM:SS</strong>. Hold any STC button for 2 seconds to record elapsed time from the entered start time.</div>
+        <button class="btn" id="beginBtn">Begin</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="runCard">
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px;">
+        <span class="pill">Record STCs</span>
+        <span class="status wait" id="netState">Checking network…</span>
+      </div>
+      <div class="sub" id="entrantSummary"></div>
+      <div id="stcList"></div>
+      <div class="footer-actions">
+        <button class="btn secondary" id="reviewBtn">Review / Edit</button>
+        <button class="btn secondary" id="resetBtn">Reset App</button>
+      </div>
+    </section>
+
+    <section class="card hidden" id="reviewCard">
+      <div style="display:flex; justify-content:space-between; gap:10px; align-items:center; margin-bottom:10px;">
+        <span class="pill">Review</span>
+        <span class="status wait" id="reviewNetState">Checking network…</span>
+      </div>
+      <div class="sub" id="reviewSummary"></div>
+      <div id="reviewList" style="margin-top:10px;"></div>
+      <div class="footer-actions">
+        <button class="btn secondary" id="backBtn">Back to STCs</button>
+        <button class="btn good" id="submitBtn">Submit Results</button>
+      </div>
+    </section>
+  </div>
+
+  <dialog id="msgDialog">
+    <div class="modal">
+      <h2 id="msgTitle">Message</h2>
+      <div id="msgText"></div>
+      <div class="modal-actions" id="msgActions"></div>
+    </div>
+  </dialog>
+
+  <script>
+    const HOLD_MS = 2000;
+    const state = {
+      rallyNo: '', surname: '', startTime: '09:00:00', stcCount: 6,
+      stcs: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const save = () => localStorage.setItem('stcPwaPrototypeV1', JSON.stringify(state));
+    const load = () => {
+      try {
+        const raw = localStorage.getItem('stcPwaPrototypeV1');
+        if (!raw) return;
+        const parsed = JSON.parse(raw);
+        Object.assign(state, parsed);
+      } catch {}
+    };
+
+    function validHHMMSS(s) {
+      const m = /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.exec(String(s || '').trim());
+      return !!m;
+    }
+    function toSeconds(hms) {
+      const [h,m,s] = hms.split(':').map(Number);
+      return h*3600 + m*60 + s;
+    }
+    function fromSeconds(total) {
+      total = Math.max(0, Math.floor(total));
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      const s = total % 60;
+      return [h,m,s].map(v => String(v).padStart(2,'0')).join(':');
+    }
+    function currentNowHHMMSS() {
+      const d = new Date();
+      return [d.getHours(), d.getMinutes(), d.getSeconds()].map(v => String(v).padStart(2,'0')).join(':');
+    }
+    function elapsedFromStart(startTime, rawNow) {
+      const now = toSeconds(rawNow || currentNowHHMMSS());
+      const start = toSeconds(startTime);
+      if (now < start) return null;
+      return fromSeconds(now - start);
+    }
+
+    function updateNetLabels() {
+      const text = navigator.onLine ? 'Online' : 'Offline';
+      const cls = navigator.onLine ? 'ok' : 'bad';
+      ['netState','reviewNetState'].forEach(id => {
+        const el = $(id);
+        el.textContent = text;
+        el.className = 'status ' + cls;
+      });
+    }
+
+    function modal(title, html, actions) {
+      $('msgTitle').textContent = title;
+      $('msgText').innerHTML = html;
+      const wrap = $('msgActions');
+      wrap.innerHTML = '';
+      actions.forEach(a => {
+        const b = document.createElement('button');
+        b.className = 'btn ' + (a.className || 'secondary');
+        b.textContent = a.label;
+        b.addEventListener('click', () => {
+          $('msgDialog').close();
+          if (a.onClick) a.onClick();
+        });
+        wrap.appendChild(b);
+      });
+      $('msgDialog').showModal();
+    }
+
+    function hydrateSetup() {
+      $('rallyNo').value = state.rallyNo || '';
+      $('surname').value = state.surname || '';
+      $('startTime').value = state.startTime || '09:00:00';
+      $('stcCount').value = state.stcCount || 6;
+    }
+
+    function ensureStcs() {
+      const count = Math.max(1, Number(state.stcCount) || 1);
+      state.stcCount = count;
+      state.stcs = Array.from({length: count}, (_, i) => {
+        const existing = state.stcs?.[i];
+        return { id: i + 1, elapsed: existing?.elapsed || '', raw: existing?.raw || '' };
+      });
+    }
+
+    function showRun() {
+      $('setupCard').classList.add('hidden');
+      $('reviewCard').classList.add('hidden');
+      $('runCard').classList.remove('hidden');
+      $('entrantSummary').textContent = `Rally ${state.rallyNo} • ${state.surname} • Start ${state.startTime}`;
+      const list = $('stcList');
+      list.innerHTML = '';
+      state.stcs.forEach(stc => {
+        const row = document.createElement('div');
+        row.className = 'stc-row';
+        row.innerHTML = `
+          <div class="stc-head">
+            <div class="stc-name">STC ${stc.id}</div>
+            <div class="status ${stc.elapsed ? 'ok' : 'wait'}">${stc.elapsed ? 'Recorded' : 'Not recorded'}</div>
+          </div>
+          <div class="timebox">${stc.elapsed || '--:--:--'}</div>
+          <div class="holdwrap" data-id="${stc.id}">
+            <div class="holdfill"></div>
+            <div class="holdlabel">Hold 2 seconds to record</div>
+          </div>`;
+        list.appendChild(row);
+        bindHold(row.querySelector('.holdwrap'), stc.id);
+      });
+      save();
+      updateNetLabels();
+    }
+
+    function bindHold(el, id) {
+      const fill = el.querySelector('.holdfill');
+      const label = el.querySelector('.holdlabel');
+      let startTs = 0, timer = null, done = false;
+      let latchedElapsed = null, latchedRaw = null;
+      const stop = () => {
+        el.classList.remove('active');
+        clearInterval(timer); timer = null; startTs = 0;
+        latchedElapsed = null; latchedRaw = null;
+        if (!done) fill.style.width = '0%';
+      };
+      const finish = () => {
+        done = true;
+        if (latchedElapsed === null || latchedRaw === null) {
+          modal('Start time issue', 'Current time is earlier than the entered start time. Please check the start time.', [{label:'OK'}]);
+          fill.style.width = '0%';
+          label.textContent = 'Hold 2 seconds to record';
+          return;
+        }
+        const stc = state.stcs.find(x => x.id === id);
+        stc.elapsed = latchedElapsed;
+        stc.raw = latchedRaw;
+        save();
+        showRun();
+      };
+      const begin = (ev) => {
+        ev.preventDefault();
+        done = false;
+        latchedRaw = currentNowHHMMSS();
+        latchedElapsed = elapsedFromStart(state.startTime, latchedRaw);
+        startTs = performance.now();
+        el.classList.add('active');
+        label.textContent = 'Recording… keep holding';
+        timer = setInterval(() => {
+          const pct = Math.min(100, ((performance.now() - startTs) / HOLD_MS) * 100);
+          fill.style.width = pct + '%';
+          if (pct >= 100 && !done) {
+            clearInterval(timer);
+            finish();
+          }
+        }, 20);
+      };
+      const cancel = () => {
+        label.textContent = 'Hold 2 seconds to record';
+        stop();
+      };
+      ['pointerdown'].forEach(evt => el.addEventListener(evt, begin));
+      ['pointerup','pointerleave','pointercancel'].forEach(evt => el.addEventListener(evt, cancel));
+    }
+
+    function showReview() {
+      $('runCard').classList.add('hidden');
+      $('reviewCard').classList.remove('hidden');
+      $('reviewSummary').textContent = `Rally ${state.rallyNo} • ${state.surname} • Start ${state.startTime}`;
+      const list = $('reviewList');
+      list.innerHTML = '';
+      state.stcs.forEach(stc => {
+        const row = document.createElement('div');
+        row.className = 'review-row';
+        row.innerHTML = `
+          <div><strong>STC ${stc.id}</strong></div>
+          <div><input data-stc-edit="${stc.id}" value="${stc.elapsed || ''}" placeholder="HH:MM:SS"></div>`;
+        list.appendChild(row);
+      });
+      list.querySelectorAll('input[data-stc-edit]').forEach(inp => {
+        inp.addEventListener('change', () => {
+          const id = Number(inp.getAttribute('data-stc-edit'));
+          const val = inp.value.trim();
+          if (val && !validHHMMSS(val)) {
+            modal('Invalid time', 'Please use HH:MM:SS format.', [{label:'OK'}]);
+            inp.focus();
+            return;
+          }
+          const stc = state.stcs.find(x => x.id === id);
+          stc.elapsed = val;
+          save();
+        });
+      });
+      updateNetLabels();
+    }
+
+    $('beginBtn').addEventListener('click', () => {
+      const rallyNo = $('rallyNo').value.trim();
+      const surname = $('surname').value.trim();
+      const startTime = $('startTime').value.trim();
+      const stcCount = $('stcCount').value.trim();
+      if (!rallyNo || !surname || !validHHMMSS(startTime)) {
+        modal('Missing or invalid details', 'Please enter Rally Number, Surname, and a valid Start Time in HH:MM:SS.', [{label:'OK'}]);
+        return;
+      }
+      state.rallyNo = rallyNo;
+      state.surname = surname;
+      state.startTime = startTime;
+      state.stcCount = Math.max(1, Number(stcCount) || 1);
+      ensureStcs();
+      showRun();
+    });
+
+    $('reviewBtn').addEventListener('click', showReview);
+    $('backBtn').addEventListener('click', showRun);
+    $('resetBtn').addEventListener('click', () => {
+      modal('Reset app', 'Clear all local data in this prototype?', [
+        {label:'Cancel'},
+        {label:'Reset', className:'warn', onClick: () => { localStorage.removeItem('stcPwaPrototypeV1'); location.reload(); }}
+      ]);
+    });
+    $('submitBtn').addEventListener('click', () => {
+      // persist edits before submit
+      const inputs = [...document.querySelectorAll('input[data-stc-edit]')];
+      for (const inp of inputs) {
+        const val = inp.value.trim();
+        if (val && !validHHMMSS(val)) {
+          modal('Invalid time', 'Please correct review entries to HH:MM:SS before submission.', [{label:'OK'}]);
+          return;
+        }
+      }
+      if (!navigator.onLine) {
+        modal('No network', 'Submission requires a network connection. This standalone prototype does not send data while offline.', [{label:'OK'}]);
+        return;
+      }
+      const payload = {
+        rallyNo: state.rallyNo,
+        surname: state.surname,
+        startTime: state.startTime,
+        stcs: state.stcs.map(s => ({ stc: `STC ${s.id}`, elapsed: s.elapsed || '' }))
+      };
+      modal('Submit results', `<div class="help">This is standalone mode, so submission is simulated only.</div><pre style="white-space:pre-wrap; font-size:12px; background:#f4f7fa; padding:10px; border-radius:12px; border:1px solid #dde5ed;">${JSON.stringify(payload, null, 2)}</pre>`, [
+        {label:'Cancel'},
+        {label:'Confirm Submit', className:'good', onClick: () => {
+          localStorage.setItem('stcPwaPrototypeLastSubmit', JSON.stringify({ when: new Date().toISOString(), payload }));
+          modal('Submitted', 'Prototype submission complete. In the Google-integrated version, this is where the data would be sent online.', [{label:'OK'}]);
+        }}
+      ]);
+    });
+
+    window.addEventListener('online', updateNetLabels);
+    window.addEventListener('offline', updateNetLabels);
+
+    load();
+    ensureStcs();
+    hydrateSetup();
+    if (state.rallyNo && state.surname && validHHMMSS(state.startTime)) {
+      showRun();
+    } else {
+      updateNetLabels();
+    }
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
