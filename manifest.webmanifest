@@ -1,0 +1,21 @@
+{
+  "name": "STC Recorder Field Trial v2.53",
+  "short_name": "STC v2.53",
+  "start_url": "./index.html?v=2.53.1",
+  "display": "standalone",
+  "background_color": "#f3f6fa",
+  "theme_color": "#123b66",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "description": "STC Recorder PWA v2.53 field trial package"
+}
