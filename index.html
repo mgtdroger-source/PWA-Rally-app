@@ -996,7 +996,7 @@ controls: []
     function trackingCheckEventEnd(fix) {
       const end = trackingEndConfig();
       if (!trackingIsRunning() || !end || end.enabled === false) return;
-      const gateM = Number(end.detectionGateM || 300);
+      const gateM = Number(end.detectionGateM || 200);
       const radiusM = Number(end.radiusM || 30);
       const distanceM = trackingDistanceMetres(fix.latitude, fix.longitude, Number(end.latitude), Number(end.longitude));
       if (!trackingRuntime.endArmed) {
