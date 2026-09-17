@@ -1,0 +1,24 @@
+{
+  "configVersion": 1,
+  "rallyTitle": "",
+  "dayLabel": "",
+  "date": "",
+  "submitUrl": "",
+  "pwaUiMode": "BUTTON_ENTRY",
+  "controls": [],
+  "trackingEnabled": false,
+  "tracking": {
+    "endpoint": "",
+    "key": "RALLY-TRACKING",
+    "eventId": "",
+    "route": "Route 1",
+    "reportIntervalSeconds": 30,
+    "endOfEvent": {
+      "enabled": false,
+      "latitude": null,
+      "longitude": null,
+      "detectionGateM": 300,
+      "radiusM": 30
+    }
+  }
+}
